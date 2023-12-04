@@ -1,15 +1,12 @@
 import express from "express";
-import ShortUrl from "../models/shortURL.js"
+import ShortUrlModel from "../models/shortURL.js";
 
 const router = new express.Router();
 
 // Define routes
 router.get("/", async (req, res) => {
     try {
-        // Fetch shortUrls from the database (adjust this query based on your actual data fetching logic)
-        const shortUrls = await ShortUrl.find();
-
-        // Render the "index" template and pass the shortUrls variable
+        const shortUrls = await ShortUrlModel.find();
         res.render("index", { shortUrls });
     } catch (error) {
         console.error(error);
@@ -18,9 +15,9 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/shortUrls", async (req, res) => {
+    console.log("req.body:", req.body);
     try {
-        // Create a new short URL and redirect to the root path
-        await ShortUrl.create({ full: req.body.full.Url });
+        await ShortUrlModel.create({ full: req.body.full });
         res.redirect("/");
     } catch (error) {
         console.error(error);
@@ -28,5 +25,19 @@ router.post("/shortUrls", async (req, res) => {
     }
 });
 
+router.get("/:shortUrl", async (req, res) => {
+    try {
+        const shortUrl = await ShortUrlModel.findOne({ short: req.params.shortUrl });
+        if (shortUrl == null) return res.sendStatus(404);
+
+        shortUrl.clicks++;
+        await shortUrl.save();
+
+        res.redirect(shortUrl.full);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+    }
+});
 
 export { router };
